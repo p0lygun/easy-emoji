@@ -8,6 +8,9 @@ dependencies:
   '@types/firefox-webext-browser':
     specifier: ^120.0.0
     version: 120.0.0
+  emojilib:
+    specifier: ^3.0.11
+    version: 3.0.11
   plasmo:
     specifier: 0.84.0
     version: 0.84.0(postcss@8.4.32)(react-dom@18.2.0)(react@18.2.0)
@@ -17,6 +20,9 @@ dependencies:
   react-dom:
     specifier: 18.2.0
     version: 18.2.0(react@18.2.0)
+  unicode-emoji-json:
+    specifier: ^0.4.0
+    version: 0.4.0
 
 devDependencies:
   '@ianvs/prettier-plugin-sort-imports':
@@ -3377,6 +3383,10 @@ packages:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
     dev: false
 
+  /emojilib@3.0.11:
+    resolution: {integrity: sha512-OuML9z640prB+0Rms1RgzJrBAqNC9mFdqT2HeFcXSGSGNEiZh9adsaPPxWbqRoMyJPzu+zNKPyGKv4/sPmJDyg==}
+    dev: false
+
   /end-of-stream@1.4.4:
     resolution: {integrity: sha512-+uw1inIHVPQoaVuHzRyXd21icM+cnt4CzD5rW+NC1wjOUSTOs+Te7FOv7AhN7vS9x/oIyhLP5PR1H+phQAHu5Q==}
     dependencies:
@@ -5572,6 +5582,10 @@ packages:
   /undici-types@5.26.5:
     resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
     dev: true
+
+  /unicode-emoji-json@0.4.0:
+    resolution: {integrity: sha512-lVNOwh2AnmbwqtSrEVjAWKQoVzWgyWmXVqPuPkPfKb0tnA0+uYN/4ILCTdy9IRj/+3drAVhmjwjNJQr2dhCwnA==}
+    dev: false
 
   /unique-string@3.0.0:
     resolution: {integrity: sha512-VGXBUVwxKMBUznyffQweQABPRRW1vHZAbadFZud4pLFAqRGvv/96vafgjWFqzourzr8YonlQiPgH0YCJfawoGQ==}

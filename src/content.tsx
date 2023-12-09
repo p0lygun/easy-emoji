@@ -7,12 +7,10 @@ import { ReactElement, useEffect, useState } from "react"
 
 import "tippy.js/dist/tippy.css"
 
-import { match } from "assert"
-
-export const config: PlasmoCSConfig = {
-  matches: ["http://0.0.0.0:8000/*"],
-  all_frames: true
-}
+// export const config: PlasmoCSConfig = {
+//   matches: ["http://0.0.0.0:8000/*"],
+//   all_frames: true
+// }
 
 export const getStyle: PlasmoGetStyle = () => {
   const style = document.createElement("style")
@@ -27,8 +25,9 @@ const emoji_bar = () => {
     partial_emoji_name?: string,
     max_divs: number = 10
   ): Array<ReactElement> {
-    if (!partial_emoji_name) {
-      return []
+    if (!partial_emoji_name || partial_emoji_name.length < 2) {
+      partial_emoji_name = "smile"
+      // return []
     }
     const filtered_emoji_divs = []
     Object.keys(emojis).forEach((emoji) => {
@@ -37,8 +36,10 @@ const emoji_bar = () => {
         if (emoji_name.includes(partial_emoji_name)) {
           filtered_emoji_divs.push(
             <Tippy key={emojis[emoji][0]} content={emojis[emoji][0]}>
-              <div className="cursor-pointer transition-transform hover:-translate-y-2">
-                {emoji}
+              <div className="flex hover:bg-gradient-to-t from-sky-400 -from-5% via-transparent flex-col pb-1 transition duration-200">
+                <div className="cursor-pointer transition-transform hover:-translate-y-2">
+                  {emoji}
+                </div>
               </div>
             </Tippy>
           )
@@ -88,7 +89,7 @@ const emoji_bar = () => {
 
   function handle_keyup(element: HTMLInputElement) {
     if (!element.selectionStart || element.value.length == 0) {
-      set_emoji_divs(get_emoji_divs())
+      set_emoji_divs([])
       return
     }
     const partial_name = get_partial_emoji_name(
@@ -107,15 +108,21 @@ const emoji_bar = () => {
     )
   }, [])
 
+  if (!emoji_divs.length) {
+    return
+  }
+
   return (
-    <div className="fixed bottom-1 h-fit w-full flex flex-col items-center">
+    <div
+      id="easy_emoji_main_container"
+      className="fixed h-fit w-full flex flex-col items-center transition-transform duration-150 bottom-1">
       <div
         className="
       max-w-fit 
       bg-gray-600 
       bg-opacity-60 
       rounded-lg 
-      flex flex-row divide-x-2 p-2
+      flex flex-row divide-x-2 px-2 pt-2
       text-4xl  select-none">
         <div className="flex flex-row pr-2">{emoji_divs}</div>
         <div className="pl-2">😀</div>

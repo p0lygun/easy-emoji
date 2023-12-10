@@ -1,5 +1,5 @@
 import { debug } from "console"
-import Tippy from "@tippyjs/react"
+import { usePopper } from 'react-popper';
 import styleText from "data-text:style.css"
 import emojis from "emojilib"
 import type { PlasmoCSConfig, PlasmoGetStyle } from "plasmo"
@@ -20,32 +20,33 @@ export const getStyle: PlasmoGetStyle = () => {
 
 const emoji_bar = () => {
   const [emoji_divs, set_emoji_divs] = useState(get_emoji_divs)
+  const [referenceElement, setReferenceElement] = useState(null);
+  const [popperElement, setPopperElement] = useState(null);
+  const { styles, attributes } = usePopper(referenceElement, popperElement, {
+    placement: 'auto',
+    modifiers: [
+      { name: 'offset', options: { offset: [8, 8] } },
+    ],
+  });
 
   function get_emoji_divs(
     partial_emoji_name?: string,
     max_divs: number = 10
   ): Array<ReactElement> {
     if (!partial_emoji_name || partial_emoji_name.length < 2) {
-      partial_emoji_name = "smile"
-      // return []
+      return []
     }
     const filtered_emoji_divs = []
     Object.keys(emojis).forEach((emoji) => {
-      const emoji_names: Array<string> = emojis[emoji]
-      emoji_names.some((emoji_name: string) => {
-        if (emoji_name.includes(partial_emoji_name)) {
-          filtered_emoji_divs.push(
-            <Tippy key={emojis[emoji][0]} content={emojis[emoji][0]}>
-              <div className="flex hover:bg-gradient-to-t from-sky-400 -from-5% via-transparent flex-col pb-1 transition duration-200">
-                <div className="cursor-pointer transition-transform hover:-translate-y-2">
-                  {emoji}
-                </div>
-              </div>
-            </Tippy>
-          )
-          return true
-        }
-      })
+      const emoji_name = emojis[emoji][0]
+      if (emoji_name.includes(partial_emoji_name)) {
+        filtered_emoji_divs.push(
+          <div key={emoji} className="flex flex-row transition duration-200 gap-x-2" data-emoji-selected="false">
+            <div className="cursor-pointer">{emoji}</div>
+            <div className="text-sky-400 font-mono font-medium text-sm leading-6">:{emoji_name}:</div>
+          </div>
+        )
+      }      
     })
     return filtered_emoji_divs.slice(0, max_divs)
   }
@@ -87,7 +88,30 @@ const emoji_bar = () => {
     }
   }
 
-  function handle_keyup(element: HTMLInputElement) {
+  function get_shadow_root() {
+    return document.getElementsByTagName("plasmo-csui")[0].shadowRoot
+  }
+  function set_selected_emoji(event?: KeyboardEvent) {
+    const easy_emoji_visible_emoji_container = get_shadow_root().getElementById(
+        "easy_emoji_visible_emoji_container"
+      ),
+      selected_emoji_css_class =
+        " bg-gradient-to-r from-sky-400 -from-5% via-transparent "
+
+    if (!easy_emoji_visible_emoji_container) {
+      return
+    }
+
+    const selected_emoji = easy_emoji_visible_emoji_container.children[0]
+    debug("[set_selected_emoji]", selected_emoji)
+    if (selected_emoji.getAttribute("data-emoji-selected") == "false") {
+      selected_emoji.className += selected_emoji_css_class
+      selected_emoji.setAttribute("data-emoji-selected", "true")
+    }
+  }
+  function handle_typing(event: KeyboardEvent) {
+    const element = event.target as HTMLInputElement
+    setReferenceElement(element)
     if (!element.selectionStart || element.value.length == 0) {
       set_emoji_divs([])
       return
@@ -102,12 +126,15 @@ const emoji_bar = () => {
   useEffect(() => {
     window.addEventListener(
       "keyup",
-      debounce((e: Event) => {
-        handle_keyup(e.target as HTMLInputElement)
+      debounce((e: KeyboardEvent) => {
+        handle_typing(e)
       }, 250)
     )
   }, [])
 
+  // useEffect(() => {
+  //   set_selected_emoji()
+  // }, [emoji_divs])
   if (!emoji_divs.length) {
     return
   }
@@ -115,17 +142,21 @@ const emoji_bar = () => {
   return (
     <div
       id="easy_emoji_main_container"
-      className="fixed h-fit w-full flex flex-col items-center transition-transform duration-150 bottom-1">
+      className="h-fit flex flex-col items-center"
+      ref={setPopperElement} style={styles.popper} {...attributes.popper}
+      >
       <div
         className="
       max-w-fit 
-      bg-gray-600 
-      bg-opacity-60 
-      rounded-lg 
-      flex flex-row divide-x-2 px-2 pt-2
-      text-4xl  select-none">
-        <div className="flex flex-row pr-2">{emoji_divs}</div>
-        <div className="pl-2">😀</div>
+      bg-[#0F172A]
+      text-blue-600
+      rounded-lg
+      flex flex-col p-1 select-none">
+        <div
+          id="easy_emoji_visible_emoji_container"
+          className="flex flex-col">
+          {emoji_divs}
+        </div>
       </div>
     </div>
   )

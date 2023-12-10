@@ -10,12 +10,14 @@
     "package": "plasmo package"
   },
   "dependencies": {
+    "@popperjs/core": "^2.11.8",
     "@tippyjs/react": "^4.2.6",
     "@types/firefox-webext-browser": "^120.0.0",
     "emojilib": "^3.0.11",
     "plasmo": "0.84.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "react-popper": "^2.3.0",
     "tippy.js": "^6.3.7",
     "unicode-emoji-json": "^0.4.0"
   },

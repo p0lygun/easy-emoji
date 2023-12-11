@@ -1,9 +1,9 @@
 import { debug } from "console"
-import { usePopper } from 'react-popper';
 import styleText from "data-text:style.css"
 import emojis from "emojilib"
 import type { PlasmoCSConfig, PlasmoGetStyle } from "plasmo"
-import { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
+import { usePopper } from "react-popper"
 
 import "tippy.js/dist/tippy.css"
 
@@ -18,37 +18,52 @@ export const getStyle: PlasmoGetStyle = () => {
   return style
 }
 
-const emoji_bar = () => {
-  const [emoji_divs, set_emoji_divs] = useState(get_emoji_divs)
-  const [referenceElement, setReferenceElement] = useState(null);
-  const [popperElement, setPopperElement] = useState(null);
-  const { styles, attributes } = usePopper(referenceElement, popperElement, {
-    placement: 'auto',
-    modifiers: [
-      { name: 'offset', options: { offset: [8, 8] } },
-    ],
-  });
+export function EmojiDiv({ emoji, name, is_selected }): ReactElement {
 
-  function get_emoji_divs(
+  return (
+    <div
+      data-emoji-name={name}
+      className="flex flex-row transition duration-200 gap-x-2 align-middle aria-selected:bg-[#2b4278]"
+      aria-selected={is_selected}>
+      <div className="cursor-pointer">{emoji}</div>
+      <div className="text-sky-400 font-mono font-medium text-sm leading-6">
+        :{name}:
+      </div>
+    </div>
+  )
+}
+
+const emoji_bar = () => {
+  const [emoji_divs, set_emoji_divs] = useState([])
+  const [filtered_emojis, set_filtered_emojis] = useState([])
+  const [referenceElement, setReferenceElement] = useState(null)
+  const [popperElement, setPopperElement] = useState(null)
+  const { styles, attributes } = usePopper(referenceElement, popperElement, {
+    placement: "auto",
+    modifiers: [{ name: "offset", options: { offset: [8, 8] } }]
+  })
+  const [selected_emoji, set_selected_emoji] = useState("")
+
+  function get_filtered_emojis(
     partial_emoji_name?: string,
-    max_divs: number = 10
-  ): Array<ReactElement> {
+    max_divs: number = 15
+  ): Array<String> {
     if (!partial_emoji_name || partial_emoji_name.length < 2) {
       return []
     }
-    const filtered_emoji_divs = []
-    Object.keys(emojis).forEach((emoji) => {
-      const emoji_name = emojis[emoji][0]
-      if (emoji_name.includes(partial_emoji_name)) {
-        filtered_emoji_divs.push(
-          <div key={emoji} className="flex flex-row transition duration-200 gap-x-2" data-emoji-selected="false">
-            <div className="cursor-pointer">{emoji}</div>
-            <div className="text-sky-400 font-mono font-medium text-sm leading-6">:{emoji_name}:</div>
-          </div>
-        )
-      }      
+    partial_emoji_name = partial_emoji_name.toLowerCase()
+
+    const temp_list = []
+    Object.entries(emojis).forEach(([emoji, names]) => {
+      names.some((name) => {
+        if (name.includes(partial_emoji_name)) {
+          temp_list.push(emoji)
+          return true
+        }
+      })
     })
-    return filtered_emoji_divs.slice(0, max_divs)
+
+    return temp_list.slice(0, max_divs)
   }
 
   function get_partial_emoji_name(
@@ -91,24 +106,15 @@ const emoji_bar = () => {
   function get_shadow_root() {
     return document.getElementsByTagName("plasmo-csui")[0].shadowRoot
   }
-  function set_selected_emoji(event?: KeyboardEvent) {
-    const easy_emoji_visible_emoji_container = get_shadow_root().getElementById(
-        "easy_emoji_visible_emoji_container"
-      ),
-      selected_emoji_css_class =
-        " bg-gradient-to-r from-sky-400 -from-5% via-transparent "
-
-    if (!easy_emoji_visible_emoji_container) {
-      return
-    }
-
-    const selected_emoji = easy_emoji_visible_emoji_container.children[0]
-    debug("[set_selected_emoji]", selected_emoji)
-    if (selected_emoji.getAttribute("data-emoji-selected") == "false") {
-      selected_emoji.className += selected_emoji_css_class
-      selected_emoji.setAttribute("data-emoji-selected", "true")
+  function handel_navigation(event: KeyboardEvent) {
+    switch (event.key) {
+      case "ArrowDown": {
+      }
+      case "ArrowUp": {
+      }
     }
   }
+
   function handle_typing(event: KeyboardEvent) {
     const element = event.target as HTMLInputElement
     setReferenceElement(element)
@@ -121,20 +127,44 @@ const emoji_bar = () => {
       element.selectionStart
     )
     debug(`[handle_keyup] ${partial_name}`)
-    set_emoji_divs(get_emoji_divs(partial_name))
+    set_filtered_emojis(get_filtered_emojis(partial_name))
   }
+
+  function set_filtered_emoji_divs() {
+    const filtered_emoji_divs = []
+    filtered_emojis.map((emoji) => {
+      filtered_emoji_divs.push(
+        <EmojiDiv
+          key={emoji}
+          emoji={emoji}
+          name={emojis[emoji][0]}
+          is_selected={selected_emoji === emoji}
+        />
+      )
+    })  
+    set_emoji_divs(filtered_emoji_divs)        
+  }
+
   useEffect(() => {
     window.addEventListener(
       "keyup",
       debounce((e: KeyboardEvent) => {
         handle_typing(e)
       }, 250)
-    )
+    ),
+      window.addEventListener("keyup", (e: KeyboardEvent) => {
+        handel_navigation(e)
+      })
   }, [])
 
-  // useEffect(() => {
-  //   set_selected_emoji()
-  // }, [emoji_divs])
+  useEffect(() => {
+    set_selected_emoji(filtered_emojis[0])
+  }, [filtered_emojis])
+
+  useEffect(() => {
+    set_filtered_emoji_divs()
+  }, [selected_emoji])
+
   if (!emoji_divs.length) {
     return
   }
@@ -143,8 +173,9 @@ const emoji_bar = () => {
     <div
       id="easy_emoji_main_container"
       className="h-fit flex flex-col items-center"
-      ref={setPopperElement} style={styles.popper} {...attributes.popper}
-      >
+      ref={setPopperElement}
+      style={styles.popper}
+      {...attributes.popper}>
       <div
         className="
       max-w-fit 
@@ -154,7 +185,7 @@ const emoji_bar = () => {
       flex flex-col p-1 select-none">
         <div
           id="easy_emoji_visible_emoji_container"
-          className="flex flex-col">
+          className="grid grid-flow-row gap-y-2">
           {emoji_divs}
         </div>
       </div>

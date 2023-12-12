@@ -2,8 +2,9 @@ import { debug } from "console"
 import styleText from "data-text:style.css"
 import emojis from "emojilib"
 import type { PlasmoCSConfig, PlasmoGetStyle } from "plasmo"
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { usePopper } from "react-popper"
+import { EmojiDiv } from "@Components/emojiDiv"
 
 import "tippy.js/dist/tippy.css"
 
@@ -18,19 +19,6 @@ export const getStyle: PlasmoGetStyle = () => {
   return style
 }
 
-export function EmojiDiv({ emoji, name, is_selected }): ReactElement {
-  return (
-    <div
-      data-emoji-name={name}
-      className="flex flex-row transition duration-200 gap-x-2 align-middle aria-selected:bg-[#2b4278]"
-      aria-selected={is_selected}>
-      <div className="cursor-pointer">{emoji}</div>
-      <div className="text-sky-400 font-mono font-medium text-sm leading-6">
-        :{name}:
-      </div>
-    </div>
-  )
-}
 
 const emoji_bar = () => {
   const [emoji_divs, set_emoji_divs] = useState([])
@@ -115,6 +103,11 @@ const emoji_bar = () => {
       event.preventDefault()
       event.stopPropagation()
       set_selected_emoji(filtered_emojis[index - 1 < 0 ? filtered_emojis.length - 1 : index -1])
+    } else if (event.key === "Escape") {
+      event.stopPropagation()
+      event.preventDefault()
+      set_filtered_emojis([])
+      set_selected_emoji("")
     }
 
   }

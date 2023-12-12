@@ -107,11 +107,13 @@ const emoji_bar = () => {
     if (event.key === "ArrowDown") {
     
       event.preventDefault()
+      event.stopPropagation()
       set_selected_emoji(filtered_emojis[(index+1) % filtered_emojis.length])      
     
     } else if (event.key === "ArrowUp") {
       
       event.preventDefault()
+      event.stopPropagation()
       set_selected_emoji(filtered_emojis[index - 1 < 0 ? filtered_emojis.length - 1 : index -1])
     }
 
@@ -165,9 +167,9 @@ const emoji_bar = () => {
 
   useEffect(() => {
     const hook_event = "keydown"
-    window.addEventListener(hook_event, handle_navigation)
+    window.addEventListener(hook_event, handle_navigation, { capture: true })
     return () => {
-      window.removeEventListener(hook_event, handle_navigation)
+      window.removeEventListener(hook_event, handle_navigation, { capture: true })
     }
   })
 

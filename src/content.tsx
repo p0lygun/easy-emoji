@@ -19,7 +19,6 @@ export const getStyle: PlasmoGetStyle = () => {
 }
 
 export function EmojiDiv({ emoji, name, is_selected }): ReactElement {
-
   return (
     <div
       data-emoji-name={name}
@@ -43,6 +42,8 @@ const emoji_bar = () => {
     modifiers: [{ name: "offset", options: { offset: [8, 8] } }]
   })
   const [selected_emoji, set_selected_emoji] = useState("")
+  let curr_typed_emoji_name = "",
+    user_stops_typing_timeout = null
 
   function get_filtered_emojis(
     partial_emoji_name?: string,
@@ -68,10 +69,14 @@ const emoji_bar = () => {
 
   function get_partial_emoji_name(
     input: string,
-    cursor_position: number
+    cursor_position: number,
+    debug_mode: boolean = false
   ): string {
     if (!input) {
       return ""
+    }
+    if (debug_mode) {
+     debug(`[get_partial_emoji_name] ${input} ${cursor_position}`) 
     }
     for (let i = cursor_position - 1; i >= 0; i--) {
       switch (input[i]) {
@@ -93,26 +98,23 @@ const emoji_bar = () => {
     return ""
   }
 
-  function debounce(callback, wait) {
-    let timeout
-    return (...args) => {
-      clearTimeout(timeout)
-      timeout = setTimeout(function () {
-        callback.apply(this, args)
-      }, wait)
+  function handle_navigation(event: KeyboardEvent) {
+    if (!filtered_emojis.length || !selected_emoji) {
+      return
     }
-  }
+    const index = filtered_emojis.indexOf(selected_emoji)
 
-  function get_shadow_root() {
-    return document.getElementsByTagName("plasmo-csui")[0].shadowRoot
-  }
-  function handel_navigation(event: KeyboardEvent) {
-    switch (event.key) {
-      case "ArrowDown": {
-      }
-      case "ArrowUp": {
-      }
+    if (event.key === "ArrowDown") {
+    
+      event.preventDefault()
+      set_selected_emoji(filtered_emojis[(index+1) % filtered_emojis.length])      
+    
+    } else if (event.key === "ArrowUp") {
+      
+      event.preventDefault()
+      set_selected_emoji(filtered_emojis[index - 1 < 0 ? filtered_emojis.length - 1 : index -1])
     }
+
   }
 
   function handle_typing(event: KeyboardEvent) {
@@ -126,10 +128,22 @@ const emoji_bar = () => {
       element.value,
       element.selectionStart
     )
-    debug(`[handle_keyup] ${partial_name}`)
+    if (partial_name === curr_typed_emoji_name) {
+      return
+    }
+    curr_typed_emoji_name = partial_name
+    // debug(`[handle_typing] ${partial_name}`)
     set_filtered_emojis(get_filtered_emojis(partial_name))
   }
 
+  function handle_keyup(event: KeyboardEvent) {
+    debug(`[handle_keyup] ${event.key}`)
+    
+    clearTimeout(user_stops_typing_timeout)
+    user_stops_typing_timeout = setTimeout(() => {
+      handle_typing(event)
+    }, 250)
+  }
   function set_filtered_emoji_divs() {
     const filtered_emoji_divs = []
     filtered_emojis.map((emoji) => {
@@ -141,27 +155,28 @@ const emoji_bar = () => {
           is_selected={selected_emoji === emoji}
         />
       )
-    })  
-    set_emoji_divs(filtered_emoji_divs)        
+    })
+    set_emoji_divs(filtered_emoji_divs)
   }
 
   useEffect(() => {
-    window.addEventListener(
-      "keyup",
-      debounce((e: KeyboardEvent) => {
-        handle_typing(e)
-      }, 250)
-    ),
-      window.addEventListener("keyup", (e: KeyboardEvent) => {
-        handel_navigation(e)
-      })
+    window.addEventListener("keyup", handle_keyup)
   }, [])
+
+  useEffect(() => {
+    const hook_event = "keydown"
+    window.addEventListener(hook_event, handle_navigation)
+    return () => {
+      window.removeEventListener(hook_event, handle_navigation)
+    }
+  })
 
   useEffect(() => {
     set_selected_emoji(filtered_emojis[0])
   }, [filtered_emojis])
 
   useEffect(() => {
+    debug(`[useEffect] New Emoji set ${selected_emoji}`)
     set_filtered_emoji_divs()
   }, [selected_emoji])
 

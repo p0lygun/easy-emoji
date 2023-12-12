@@ -1,10 +1,10 @@
 import { debug } from "console"
+import { EmojiDiv } from "@Components/emojiDiv"
 import styleText from "data-text:style.css"
 import emojis from "emojilib"
 import type { PlasmoCSConfig, PlasmoGetStyle } from "plasmo"
 import React, { useEffect, useState } from "react"
 import { usePopper } from "react-popper"
-import { EmojiDiv } from "@Components/emojiDiv"
 
 import "tippy.js/dist/tippy.css"
 
@@ -19,15 +19,23 @@ export const getStyle: PlasmoGetStyle = () => {
   return style
 }
 
-
 const emoji_bar = () => {
   const [emoji_divs, set_emoji_divs] = useState([])
   const [filtered_emojis, set_filtered_emojis] = useState([])
   const [referenceElement, setReferenceElement] = useState(null)
   const [popperElement, setPopperElement] = useState(null)
   const { styles, attributes } = usePopper(referenceElement, popperElement, {
-    placement: "auto",
-    modifiers: [{ name: "offset", options: { offset: [8, 8] } }]
+    placement: "bottom-start",
+    modifiers: [
+      {
+        name: "offset",
+        options: { offset: [8, 8] }
+      },
+      {
+        name: "flip",
+        enabled: false
+      }
+    ]
   })
   const [selected_emoji, set_selected_emoji] = useState("")
   let curr_typed_emoji_name = "",
@@ -64,7 +72,7 @@ const emoji_bar = () => {
       return ""
     }
     if (debug_mode) {
-     debug(`[get_partial_emoji_name] ${input} ${cursor_position}`) 
+      debug(`[get_partial_emoji_name] ${input} ${cursor_position}`)
     }
     for (let i = cursor_position - 1; i >= 0; i--) {
       switch (input[i]) {
@@ -93,47 +101,61 @@ const emoji_bar = () => {
     const index = filtered_emojis.indexOf(selected_emoji)
 
     if (event.key === "ArrowDown") {
-    
       event.preventDefault()
       event.stopPropagation()
-      set_selected_emoji(filtered_emojis[(index+1) % filtered_emojis.length])      
-    
+      set_selected_emoji(filtered_emojis[(index + 1) % filtered_emojis.length])
     } else if (event.key === "ArrowUp") {
-      
       event.preventDefault()
       event.stopPropagation()
-      set_selected_emoji(filtered_emojis[index - 1 < 0 ? filtered_emojis.length - 1 : index -1])
+      set_selected_emoji(
+        filtered_emojis[index - 1 < 0 ? filtered_emojis.length - 1 : index - 1]
+      )
     } else if (event.key === "Escape") {
       event.stopPropagation()
       event.preventDefault()
       set_filtered_emojis([])
       set_selected_emoji("")
     }
+  }
 
+  function get_partial_name_from_input_tag(element: HTMLInputElement): string {
+    if (!element.selectionStart || element.value.length == 0) {
+      return ""
+    }
+    return get_partial_emoji_name(element.value, element.selectionStart)
+    // debug(`[handle_typing] ${partial_name}`)
+  }
+
+  function get_partial_name_from_contenteditable(element: HTMLElement): string {
+    return ""
   }
 
   function handle_typing(event: KeyboardEvent) {
-    const element = event.target as HTMLInputElement
-    setReferenceElement(element)
-    if (!element.selectionStart || element.value.length == 0) {
-      set_emoji_divs([])
-      return
+    const target_element = event.target as HTMLElement
+
+    let partial_name = ""
+
+    if (["INPUT", "TEXTAREA"].includes(target_element.tagName)) {
+      partial_name = get_partial_name_from_input_tag(
+        target_element as HTMLInputElement
+      )
+    } else if (target_element.tagName === "DIV") {
+      partial_name = get_partial_name_from_contenteditable(
+        target_element as HTMLDivElement
+      )
     }
-    const partial_name = get_partial_emoji_name(
-      element.value,
-      element.selectionStart
-    )
+
+    setReferenceElement(target_element)
     if (partial_name === curr_typed_emoji_name) {
       return
     }
     curr_typed_emoji_name = partial_name
-    // debug(`[handle_typing] ${partial_name}`)
     set_filtered_emojis(get_filtered_emojis(partial_name))
   }
 
   function handle_keyup(event: KeyboardEvent) {
     debug(`[handle_keyup] ${event.key}`)
-    
+
     clearTimeout(user_stops_typing_timeout)
     user_stops_typing_timeout = setTimeout(() => {
       handle_typing(event)
@@ -162,7 +184,9 @@ const emoji_bar = () => {
     const hook_event = "keydown"
     window.addEventListener(hook_event, handle_navigation, { capture: true })
     return () => {
-      window.removeEventListener(hook_event, handle_navigation, { capture: true })
+      window.removeEventListener(hook_event, handle_navigation, {
+        capture: true
+      })
     }
   })
 
@@ -188,7 +212,6 @@ const emoji_bar = () => {
       {...attributes.popper}>
       <div
         className="
-      max-w-fit 
       bg-[#0F172A]
       text-blue-600
       rounded-lg
